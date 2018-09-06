@@ -5,7 +5,7 @@ import sys
 from bs4 import BeautifulSoup
 reload(sys)
 sys.setdefaultencoding("utf-8")
-head_url = 'http://adnmb1.com'
+head_url = 'http://adnmb1.com/'
 #获取网址
 def OpenPage(url):
 	myhead = {}
@@ -20,19 +20,30 @@ def ParseMainPage(page):
 	GetList = soup.find_all(href=re.compile("/f/"))
 	UrlList = []
 	for item in GetList:
-		UrlList.append("http://adnmb1.com/"+ item["href"])
+		UrlList.append(head_url + item["href"])
 	del UrlList[0]
 	return UrlList
 
 #获取当前版块内所有的串信息
-def ParseBoardPage():
-	pass
+def ParseBoardPage(board_url):
+    post_url_list = []
+    for num in range(101):
+        pages_url = board_url + '?page=%d' % num
+        #pages_url = 'http://adnmb1.com/f/欢乐恶搞?page=2'
+        page = OpenPage(pages_url)
+        soup = BeautifulSoup(page,"html.parser")
+        id_list = soup.find_all(attrs={"data-threads-id":re.compile("[0-9]+")},class_="h-threads-item uk-clearfix")
+        for item in id_list:
+            post_url_list.append("http://adnmb1.com/t/" + str(item['data-threads-id']))
+        #print type(post_url_list[0])
+    return post_url_list
+
 #获取串内容
-'''
-需要获取的内容包括 po主留言，用户留言，用户id，poid
-用字典储存，这里的po主留言编号就是url
-'''
 def ParseDetailPage(page):
+    '''
+    需要获取的内容包括 po主留言，用户留言，用户id，poid
+    用字典储存，这里的po主留言编号就是url
+    '''
     #reply_content = soup.find_all(class_=re.compile("")
     soup = BeautifulSoup(page,"html.parser")
 	#for item in head_content:
@@ -46,7 +57,6 @@ def ParseDetailPage(page):
     pages_list = soup.find_all(class_=re.compile("uk-pagination uk-pagination-left h-pagination"))[0]
     pages_tag = []
     for child in pages_list.children:
-        print type(child)
         if type(pages_list) is type(child):
             pages_tag.append(child)
     pages_url = []
@@ -63,14 +73,32 @@ def ParseDetailPage(page):
         page = OpenPage(head_url+url)
         soup = BeautifulSoup(page,"html.parser")
         head_content =head_content + soup.find_all(class_=re.compile("h-threads-content"))
-    head_content = list(set(head_content))
-    return [str(value) for value in head_content] , head_id
+    #head_content = list(set(head_content))
+    for item in head_content:
+        print item
+    return [str(value) for value in head_content]
 
 def TEST():
 	page = OpenPage("http://adnmb1.com")
 	print ParseMainPage(page)
 
 def TEST2():
-	page = OpenPage("http://adnmb1.com/t/14937269")
-	ParseDetailPage(page)
+    page = OpenPage("http://adnmb1.com/t/13459929")
+    ParseDetailPage(page)
+
 TEST2()
+
+'''
+if __name__ == "__main__":
+    #首先获取页面信息
+    index_page = OpenPage("http://adnmb1.com")
+    #获取的各个版块的board_url
+    board_url_list = ParseMainPage(index_page)
+    #循环获取各个版块的所有post_url内容
+    for board_url in board_url_list:
+        print "正在爬取%s" % board_url
+        post_url_list = ParseBoardPage(board_url)
+        #获取post_url_list中所有帖子的信息
+        for post_url in post_url_list:
+            ParseDetailPage(post_url)
+'''
