@@ -1,14 +1,40 @@
 # coding=utf-8
-from selenium import webdriver
+import sys
+import re
+import urllib2
+from bs4 import BeautifulSoup
 
-driver = webdriver.Chrome("/usr/bin/chromedriver")     # 打开 Chrome 浏览器
+def OpenPage(url):
+    #需要有请求头
+    Myheaders = {}
+    #构造request请求
+    #第一个参数是url 第二个参数是请求头
+    #返回值是一个request请求对象
+    req = urllib2.Request(url,headers=Myheaders)
+    #激活请求，获取响应
+    f = urllib2.urlopen(req)
+    data = f.read()
+    #decode() encode()
+    #ignore replace xml...replace
+    #print data
+    return data
 
-# 将刚刚复制的帖在这
-driver.get("https://www.bilibili.com/bangumi/media/md5707/?from=search&seid=16694422454236132120")
-driver.find_element_by_class_name("misl-ep-item simple").click()
+def ParseMainPage(page):
+    soup = BeautifulSoup(page,"html.parser")
+    GetList = soup.find_all(ep_id=True)
+    UrlList = []
+    print GetList
+    for item in GetList:
+        print item
+    return UrlList
 
-# 得到网页 html, 还能截图
-# current_url
-print driver
-print driver.current_url()
-html = driver.page_source
+def TEST():
+    page = OpenPage("https://www.bilibili.com/bangumi/media/md5707")
+    # page = 'duration":1490328,"ep_id":100704,"episode_status"'
+    url_list = re.findall('"ep_id":[0-9]*',page)
+    url_list = ["https://www.bilibili.com/bangumi/play/ep"+value[8:] for value in url_list]
+    for line in url_list:
+        print line
+TEST()
+
+
